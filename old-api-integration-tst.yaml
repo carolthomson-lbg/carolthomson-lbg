@@ -1,0 +1,45 @@
+#api-integration-functions.yaml
+swagger: '2.0'
+info:
+  title: INTEGRATION-API Swagger
+  description: API Gateway with a Google Cloud Run backend
+  version: 1.0.0
+schemes:
+  - https
+produces:
+  - application/json
+host: api-integration-ux4hn7bffa-nw.a.run.app
+basePath: /v1
+security:
+- api_key: []
+paths:
+  /qvm/summary:
+    get:
+      summary: The homepage of the integration application
+      operationId: getsummary
+      x-google-backend:
+        address: https://api-integration-ux4hn7bffa-nw.a.run.app/v1/qvm/summary
+      responses:
+        '200':
+          description: A successful response
+          schema:
+            type: string
+ 
+  /cve/triaged:
+    get:
+      summary: for Aquasec to call on the API
+      operationId: gettriaged
+      x-google-backend:
+        address: https://api-integration-ux4hn7bffa-nw.a.run.app/v1/cve/triaged
+      responses:
+        '200':
+          description: A successful response
+          schema:
+            type: string
+
+securityDefinitions:
+  # API verification
+  api_key:
+    type: "apiKey"
+    name: "api_key"
+    in: "query"
