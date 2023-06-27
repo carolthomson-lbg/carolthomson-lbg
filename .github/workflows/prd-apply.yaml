@@ -1,0 +1,95 @@
+name: 'prd: Terraform Apply on Release'
+
+on:
+  release:
+    types: [released]
+
+env:
+  GOOGLE_PROJECT: dcsgva-analytics-prd                                   # PROJECT_ID of the GCP Project
+  GOOGLE_CREDENTIALS: ${{ secrets.DCSGVA_ANALYTICS_PRD_SYSTEM }}         # GitHub Actions Service Account Key that has been added to the repository
+  GOOGLE_REGION: europe-west2                                            # Region where the resources need to be deployed
+
+jobs:
+
+  terraform:
+    name: terraform-prd-apply
+    runs-on: [ubuntu-latest]                                             # Runs on self-hosted runner
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+
+################################################################################
+##                                                                            ##
+##           ----==| P R E P A R E   E N V I R O N M E N T |==----            ##
+##                                                                            ##
+################################################################################
+
+      - name: Set Environment Variables
+        run: |
+          echo "PROJECT_ID=$(echo $GOOGLE_PROJECT)" >> $GITHUB_ENV
+          echo "SHORT_SHA=$(echo $GITHUB_SHA | cut -c 1-7)" >> $GITHUB_ENV
+      # Checkout the repository to the GitHub Actions runner
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build Information
+        run: |
+          echo \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*
+          echo BUILD INFORMATION:
+          echo ------------------
+          [ ! -z "$PROJECT_ID" ]         && echo "Project ID:     $PROJECT_ID"
+          [ ! -z "$GITHUB_EVENT_NAME" ]  && echo "GitHub Event:   $GITHUB_EVENT_NAME"
+          [ ! -z "$GITHUB_RUN_ID" ]      && echo "GitHub Run ID:  $GITHUB_RUN_ID"
+          [ ! -z "$GITHUB_RUN_NUMBER" ]  && echo "GitHub Run No:  $GITHUB_RUN_NUMBER"
+          [ ! -z "$GITHUB_SHA" ]         && echo "Commit SHA:     $GITHUB_SHA"
+          [ ! -z "$SHORT_SHA" ]          && echo "Short SHA:      $SHORT_SHA"
+          [ ! -z "$GITHUB_REPOSITORY" ]  && echo "Repo Name:      $GITHUB_REPOSITORY"
+          [ ! -z "$GITHUB_REF" ]         && echo "Repo Ref:       $GITHUB_REF"
+          [ ! -z "$GITHUB_HEAD_REF" ]    && echo "Head Branch:    $GITHUB_HEAD_REF"
+          [ ! -z "$GITHUB_BASE_REF" ]    && echo "Base Branch:    $GITHUB_BASE_REF"
+          [ ! -z "$RUNNER_NAME" ]        && echo "Runner Name:    $RUNNER_NAME"
+          [ ! -z "$RUNNER_OS" ]          && echo "Runner OS:      $RUNNER_OS"
+          echo \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*
+################################################################################
+##                                                                            ##
+##                 ----==| R U N   T E R R A F O R M |==----                  ##
+##                                                                            ##
+################################################################################
+
+      # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
+      - name: Setup Terraform
+        id: tf-setup
+        uses: hashicorp/setup-terraform@v2
+
+      # Check Terraform Version
+      - name: Terraform Version
+        id: tf-version
+        run: terraform -v
+  
+      # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+      - name: Terraform Init
+        id: tf-init
+        run: terraform init -backend-config=bucket=${PROJECT_ID}-state
+        working-directory: infra/terraform
+  
+     # Validates the Terraform Code
+      - name: Terraform Validate
+        id: tf-validate
+        run: terraform validate -no-color
+  
+      # Generates an execution plan for Terraform
+      - name: Terraform Plan
+        id: tf-plan
+        run: terraform plan -var-file=tfvars/${PROJECT_ID}.tfvars -out=tfplan
+        working-directory: infra/terraform
+
+  #   # On push to master, build or change infrastructure according to Terraform configuration files
+      - name: Terraform Apply
+        run: terraform apply -var-file=tfvars/${PROJECT_ID}.tfvars -auto-approve
+        id: tf-apply
+        working-directory: infra/terraform
+        
