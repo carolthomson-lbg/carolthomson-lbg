@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        .desktop, 
+        .print {
+            display: none;
+        }
+
+        @media print {
+            .mobile, 
+            .desktop {
+                display: none;
+            }
+
+            .print {
+                display: block;
+            }
+        }
+        .mobile {
+            display: none;
+        }
+
+        @media screen and (min-width: 768px) {
+            .mobile {
+                display:none;
+            }
+
+            .desktop {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="desktop">Desktop</div>
+    <div class="mobile">Mobile</div>
+    <div class="print">Print</div>
+</body>
+</html>

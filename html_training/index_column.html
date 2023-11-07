@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+        .columns {
+            border: solid 1px #39f;
+            display: flex;
+        }
+
+        .columns > div {
+            border: solid 1px #ccc;
+            flex: 1;
+        }
+
+        .columns > div:nth-of-type(2) {
+            flex: 2;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="columns">
+      <div>Column 1</div>
+      <div>Column 2</div>
+      <div>Column 3</div>
+  </body>
+</html>
